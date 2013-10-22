@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.itwarcraft.lite.mvc.Intercepter;
+import com.itwarcraft.lite.base.Intercepter;
 
 
 /**

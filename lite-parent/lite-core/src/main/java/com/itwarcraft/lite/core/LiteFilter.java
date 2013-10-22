@@ -24,13 +24,13 @@ import org.apache.log4j.Logger;
 import com.itwarcraft.lite.annotation.Act;
 import com.itwarcraft.lite.annotation.Interceptors;
 import com.itwarcraft.lite.annotation.Path;
+import com.itwarcraft.lite.base.Intercepter;
 import com.itwarcraft.lite.converter.ConverterFactory;
 import com.itwarcraft.lite.mvc.Action;
 import com.itwarcraft.lite.mvc.ActionContext;
 import com.itwarcraft.lite.mvc.ActionExceptionHandler;
 import com.itwarcraft.lite.mvc.ActionInvocation;
 import com.itwarcraft.lite.mvc.ActionResult;
-import com.itwarcraft.lite.mvc.Intercepter;
 import com.itwarcraft.lite.mvc.URLMatcher;
 import com.itwarcraft.lite.util.ClassUtil;
 

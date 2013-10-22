@@ -1,5 +1,7 @@
 package com.itwarcraft.lite.mvc;
 
+import com.itwarcraft.lite.base.Intercepter;
+
 
 /**
  * 执行Action
@@ -11,9 +13,9 @@ public class ActionInvocation {
 	
 	public ActionInvocation(Action action, Object... args) {
 		this.action = action;
-		this.interceptors = action.interceptors;
-		if (action.interceptors != null && action.interceptors.length != 0) {
-			this.length = action.interceptors.length;
+		this.interceptors = action.intercepters;
+		if (action.intercepters != null && action.intercepters.length != 0) {
+			this.length = action.intercepters.length;
 		}
 		this.args = args;
 	}

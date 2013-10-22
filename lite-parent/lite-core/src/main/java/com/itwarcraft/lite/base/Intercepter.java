@@ -1,4 +1,6 @@
-package com.itwarcraft.lite.mvc;
+package com.itwarcraft.lite.base;
+
+import com.itwarcraft.lite.mvc.ActionInvocation;
 
 
 public interface Intercepter {

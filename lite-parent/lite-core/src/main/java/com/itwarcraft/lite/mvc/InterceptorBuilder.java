@@ -7,6 +7,7 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 
 import com.itwarcraft.lite.annotation.Interceptors;
+import com.itwarcraft.lite.base.Intercepter;
 
 /**
  * 拦截器构建类：查找注解构建拦截器Map
