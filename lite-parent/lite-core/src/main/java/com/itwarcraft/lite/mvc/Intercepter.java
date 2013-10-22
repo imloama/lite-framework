@@ -1,7 +1,7 @@
 package com.itwarcraft.lite.mvc;
 
 
-public interface Interceptor {
+public interface Intercepter {
 
 	public void doIntercept(ActionInvocation invocation);
 	

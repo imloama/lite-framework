@@ -14,23 +14,23 @@ import com.itwarcraft.lite.annotation.Interceptors;
 public class InterceptorBuilder {
 	private static Logger logging = Logger.getLogger(InterceptorBuilder.class);
 
-	private static final Interceptor[] Null = new Interceptor[0];
-	private Map<Class<Interceptor>, Interceptor> interceptorMap = new HashMap<Class<Interceptor>, Interceptor>();
+	private static final Intercepter[] Null = new Intercepter[0];
+	private Map<Class<Intercepter>, Intercepter> interceptorMap = new HashMap<Class<Intercepter>, Intercepter>();
 
 	@SuppressWarnings("unchecked")
 	/**
 	 * 将系统最基础的拦截器数组转换为HashMap<Interceptor>
 	 */
-	public void addBaseInterceptorsToInterceptorMap(Interceptor[] baseInterceptors) {
-		for (Interceptor interceptor : baseInterceptors) {
-			interceptorMap.put((Class<Interceptor>) interceptor.getClass(), interceptor);
+	public void addBaseInterceptorsToInterceptorMap(Intercepter[] baseInterceptors) {
+		for (Intercepter interceptor : baseInterceptors) {
+			interceptorMap.put((Class<Intercepter>) interceptor.getClass(), interceptor);
 		}
 	}
 
 	/**
 	 * 构建Action的拦截器
 	 */
-	public Interceptor[] buildActionInterceptors(Interceptor[] baseInterceptors, Class<?> controllerClass, Interceptor[] controllerInterceptors, Method method, Interceptor[] methodInterceptors) {
+	public Intercepter[] buildActionInterceptors(Intercepter[] baseInterceptors, Class<?> controllerClass, Intercepter[] controllerInterceptors, Method method, Intercepter[] methodInterceptors) {
 
 		/*
 		ClearLayer controllerClearType = getClearTypeOnTheController(controllerClass);
@@ -49,7 +49,7 @@ public class InterceptorBuilder {
 		if (size == 0) {
 			return Null;
 		} else {
-			Interceptor[] allInterceptorsOnTheAction = new Interceptor[size];
+			Intercepter[] allInterceptorsOnTheAction = new Intercepter[size];
 			int index = 0;
 			if (baseInterceptors != null) {
 				for (int i = 0; i < baseInterceptors.length; i++) {
@@ -71,7 +71,7 @@ public class InterceptorBuilder {
 	/**
 	 * 构建控制器上面的拦截器
 	 */
-	public Interceptor[] buildControllerInterceptors(Class<?> controllerClass) {
+	public Intercepter[] buildControllerInterceptors(Class<?> controllerClass) {
 		Interceptors intercepters = controllerClass.getAnnotation(Interceptors.class);
 		return intercepters != null ? createInterceptors(intercepters) : Null;
 	}
@@ -79,7 +79,7 @@ public class InterceptorBuilder {
 	/**
 	 * 构建方法上面的拦截器
 	 */
-	public Interceptor[] buildMethodInterceptors(Method method) {
+	public Intercepter[] buildMethodInterceptors(Method method) {
 		Interceptors intercepters = method.getAnnotation(Interceptors.class);
 		return intercepters != null ? createInterceptors(intercepters) : Null;
 	}
@@ -88,13 +88,13 @@ public class InterceptorBuilder {
 	 * 创建拦截器:每个拦截器只实例化一次
 	 */
 	// 该类实现的模式是数据库存储模式,即有一个返回值和一个或者多个引用传值:interceptorMap是引用传值,interceptors是返回值
-	private Interceptor[] createInterceptors(Interceptors before) {
-		Interceptor[] interceptors = null;
+	private Intercepter[] createInterceptors(Interceptors before) {
+		Intercepter[] interceptors = null;
 		@SuppressWarnings("unchecked")
 		// :Before(values={xx.class,yy.class})
-		Class<Interceptor>[] interceptorClasses = (Class<Interceptor>[]) before.value();
+		Class<Intercepter>[] interceptorClasses = (Class<Intercepter>[]) before.value();
 		if (interceptorClasses != null && interceptorClasses.length > 0) {
-			interceptors = new Interceptor[interceptorClasses.length];
+			interceptors = new Intercepter[interceptorClasses.length];
 			int length = interceptors.length;
 			for (int i = 0; i < length; i++) {
 				interceptors[i] = interceptorMap.get(interceptorClasses[i]);

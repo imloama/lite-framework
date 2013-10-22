@@ -30,7 +30,7 @@ import com.itwarcraft.lite.mvc.ActionContext;
 import com.itwarcraft.lite.mvc.ActionExceptionHandler;
 import com.itwarcraft.lite.mvc.ActionInvocation;
 import com.itwarcraft.lite.mvc.ActionResult;
-import com.itwarcraft.lite.mvc.Interceptor;
+import com.itwarcraft.lite.mvc.Intercepter;
 import com.itwarcraft.lite.mvc.URLMatcher;
 import com.itwarcraft.lite.util.ClassUtil;
 
@@ -39,9 +39,9 @@ import com.itwarcraft.lite.util.ClassUtil;
  * @author itwarcraft@gmail.com
  *
  */
-public class DispatcherFilter implements Filter {
+public class LiteFilter implements Filter {
 
-	private static final Logger logger = Logger.getLogger(DispatcherFilter.class);
+	private static final Logger logger = Logger.getLogger(LiteFilter.class);
 	
 	private static final String REQUEST_JSON = "application/json";
 	private static final String REQUEST_XML = "application/xml";
@@ -57,7 +57,7 @@ public class DispatcherFilter implements Filter {
 		logger.info("初始化容器");
 		String devMode = filterConfig.getInitParameter("devMode");
 		if (devMode != null && ("true".equalsIgnoreCase(devMode) || "false".equalsIgnoreCase(devMode))) {
-			App.init(Boolean.parseBoolean(devMode));
+			Lite.init(Boolean.parseBoolean(devMode));
 		}
 		//1 扫描所有的注解action
 		List<Class<?>> list = ClassUtil.getClassListByAnnotation(Act.class);
@@ -99,11 +99,11 @@ public class DispatcherFilter implements Filter {
 						
 						//获取拦截器
 						Interceptors interceptors = m.getAnnotation(Interceptors.class);
-						Class<? extends Interceptor>[] inters = interceptors.value();
+						Class<? extends Intercepter>[] inters = interceptors.value();
 						//拦截器数组
-						Interceptor[] ins = new Interceptor[inters.length];
+						Intercepter[] ins = new Intercepter[inters.length];
 						int i=0;
-						for(Class<? extends Interceptor> intercs : inters)
+						for(Class<? extends Intercepter> intercs : inters)
 						{
 							try {
 								ins[i]=intercs.newInstance();

@@ -22,7 +22,7 @@ public class ActionInvocation {
 	}
 
 	private Action action;
-	private Interceptor[] interceptors;
+	private Intercepter[] interceptors;
 	private int index = 0;
 	private int length = 0;
 

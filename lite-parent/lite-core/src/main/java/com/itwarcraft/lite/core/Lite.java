@@ -1,6 +1,6 @@
 package com.itwarcraft.lite.core;
 
-public class App {
+public class Lite {
 
 	private static boolean devMode = false;
 	
@@ -8,11 +8,11 @@ public class App {
 		return devMode;
 	}
 	
-	private App(){}
+	private Lite(){}
 	
 	
 	static void init(boolean devMode){
-		App.devMode = devMode; 
+		Lite.devMode = devMode; 
 	}
 	
 	

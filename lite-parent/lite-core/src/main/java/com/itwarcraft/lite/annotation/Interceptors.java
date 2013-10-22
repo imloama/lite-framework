@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import com.itwarcraft.lite.mvc.Interceptor;
+import com.itwarcraft.lite.mvc.Intercepter;
 
 /**
  * 拦截器注解 
@@ -16,5 +16,5 @@ import com.itwarcraft.lite.mvc.Interceptor;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface Interceptors {
-	Class<? extends Interceptor>[] value();
+	Class<? extends Intercepter>[] value();
 }

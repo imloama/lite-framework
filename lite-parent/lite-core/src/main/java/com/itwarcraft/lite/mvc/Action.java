@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 
 
 public class Action {
-	public Action(Class<?> clasz, Method method, Interceptor[] interceptors) {
+	public Action(Class<?> clasz, Method method, Intercepter[] interceptors) {
 		this.clasz = clasz;
 		this.method = method;
 		this.parameterTypes = method.getParameterTypes();
@@ -15,5 +15,5 @@ public class Action {
 	public final Class<?> clasz;
 	public final Method method;
 	public final Class<?>[] parameterTypes;
-	public final Interceptor[] interceptors;
+	public final Intercepter[] interceptors;
 }
