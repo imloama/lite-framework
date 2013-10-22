@@ -139,7 +139,6 @@ public class LiteFilter implements Filter {
 	}
 	
 	
-	
 
 
 	public void doFilter(ServletRequest req, ServletResponse rep,
@@ -221,23 +220,29 @@ public class LiteFilter implements Filter {
 			String r = request.getContentType();
 			//如果是json请求
 			//如果是xml请求
-			//如果是普通请求
+			//如果是普通请求  根据ActionResult中设定的参数类型，默认  
+			//可以在web.xml中配置视图的模板类型，然后调用不同的视图
 			if(REQUEST_JSON.equalsIgnoreCase(r)){
 				render.renderToJSON(request, response);
 			}else if(REQUEST_XML.equalsIgnoreCase(r)){
 				render.renderToXML(request, response);
 			}else{
+				
+				
+				
 				render.render(request, response);
 			}
 			return;
 		}
-		// 这里没有实现-请自己实现
+		// 如果方法返回的是string，则直接打印String的内容
 		if (result instanceof String) {
+			
+			/*
 			String string = (String) result;
 			if (string.startsWith("redirect:")) {
 				response.sendRedirect(string.substring("redirect:".length()));
 				return;
-			}
+			}*/
 		}
 		throw new ServletException("Cannot handle result with type '" + result.getClass().getName() + "'.");
 	}
