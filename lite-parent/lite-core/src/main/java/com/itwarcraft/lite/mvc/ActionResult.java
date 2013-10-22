@@ -16,6 +16,7 @@ import com.itwarcraft.lite.core.PluginFactory;
 public class ActionResult {
 
 	private static final String JSON_CONTENT_TYPE = "application/json";
+	private static final String XML_CONTENT_TYPE = "application/xml";
 	
 	
 	/**

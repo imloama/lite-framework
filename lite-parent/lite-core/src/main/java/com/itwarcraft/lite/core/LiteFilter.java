@@ -134,19 +134,7 @@ public class LiteFilter implements Filter {
 		this.matchers = this.matcherActionMap.keySet().toArray(new URLMatcher[this.matcherActionMap.size()]);
 		
 		//url地址排序
-		Arrays.sort(this.matchers,new Comparator<URLMatcher>(){
-
-			public int compare(URLMatcher m1, URLMatcher m2) {
-				String u1 = m1.urlMapping;
-				String u2 = m2.urlMapping;
-				int c = u1.compareTo(u2);
-				if(c==0){
-					throw new RuntimeException("Cannot mapping one url '" + u1 + "' to more than one action method.");
-				}else{
-					return 0;	
-				}
-			}
-		});//排序结束
+		Arrays.sort(this.matchers,new Sort());//排序结束
 		
 	}
 	
@@ -313,6 +301,26 @@ public class LiteFilter implements Filter {
 
 	public void destroy() {
 
+	}
+	
+	/**
+	 * URLMatcher排序类
+	 * @author itwarcraft@gmail.com
+	 *
+	 */
+	public final class Sort implements Comparator<URLMatcher>{
+
+		public int compare(URLMatcher m1, URLMatcher m2) {
+			String u1 = m1.urlMapping;
+			String u2 = m2.urlMapping;
+			int c = u1.compareTo(u2);
+			if(c==0){
+				throw new RuntimeException("Cannot mapping one url '" + u1 + "' to more than one action method.");
+			}else{
+				return 0;	
+			}
+		}
+		
 	}
 
 }
