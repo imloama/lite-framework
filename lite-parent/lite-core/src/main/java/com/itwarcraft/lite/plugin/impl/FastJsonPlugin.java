@@ -1,4 +1,4 @@
-package com.itwarcraft.lite.plugin.fastjson;
+package com.itwarcraft.lite.plugin.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.itwarcraft.lite.plugin.JSONPlugin;

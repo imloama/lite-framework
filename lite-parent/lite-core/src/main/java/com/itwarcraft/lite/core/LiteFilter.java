@@ -32,19 +32,17 @@ import com.itwarcraft.lite.mvc.ActionExceptionHandler;
 import com.itwarcraft.lite.mvc.ActionInvocation;
 import com.itwarcraft.lite.mvc.ActionResult;
 import com.itwarcraft.lite.mvc.URLMatcher;
+import com.itwarcraft.lite.mvc.ViewType;
 import com.itwarcraft.lite.util.ClassUtil;
 
 /**
  * 入口函数,拦截所有的请求，并调用ActionInvocation执行action
  * @author itwarcraft@gmail.com
- *
  */
+
 public class LiteFilter implements Filter {
 
 	private static final Logger logger = Logger.getLogger(LiteFilter.class);
-	
-	private static final String REQUEST_JSON = "application/json";
-	private static final String REQUEST_XML = "application/xml";
 	
 	private URLMatcher[] matchers = null;
 	private Map<URLMatcher, Action> matcherActionMap = new HashMap<URLMatcher, Action>();
@@ -55,10 +53,26 @@ public class LiteFilter implements Filter {
 	 */
 	public void init(FilterConfig filterConfig) throws ServletException {
 		logger.info("初始化容器");
+		boolean dev = false;
+		ViewType type = ViewType.HTML;
 		String devMode = filterConfig.getInitParameter("devMode");
+		String template = filterConfig.getInitParameter("template");
 		if (devMode != null && ("true".equalsIgnoreCase(devMode) || "false".equalsIgnoreCase(devMode))) {
-			Lite.init(Boolean.parseBoolean(devMode));
+			
 		}
+		//设定视图模板
+		if(template!=null){
+			if("freemarker".equalsIgnoreCase(template)){
+				type = ViewType.FREE_MARKER;
+			}else if("velocity".equalsIgnoreCase(template)){
+				type = ViewType.VELOCITY;
+			}else if("JSP".equalsIgnoreCase(template)){
+				type = ViewType.JSP;
+			}
+		}
+		
+		Lite.init(dev, type);
+		
 		//1 扫描所有的注解action
 		List<Class<?>> list = ClassUtil.getClassListByAnnotation(Act.class);
 		Set<String> publicMethodNameSetInObjectClass = findPublicMethodNamesInObjectClass();
@@ -127,15 +141,10 @@ public class LiteFilter implements Filter {
 		
 		if(this.matcherActionMap.size()==0){
 			throw new RuntimeException("the size of urlMatcherActionMap is 0");
-		}else{
-			
 		}
-		
 		this.matchers = this.matcherActionMap.keySet().toArray(new URLMatcher[this.matcherActionMap.size()]);
-		
 		//url地址排序
 		Arrays.sort(this.matchers,new Sort());//排序结束
-		
 	}
 	
 	
@@ -211,7 +220,7 @@ public class LiteFilter implements Filter {
 
 	
 	private void handleResult(HttpServletRequest request,
-			HttpServletResponse response, Object result) throws ServletException, IOException {
+			HttpServletResponse response, Object result) throws Exception {
 		if (result == null) {
 			return;
 		}
@@ -222,23 +231,36 @@ public class LiteFilter implements Filter {
 			//如果是xml请求
 			//如果是普通请求  根据ActionResult中设定的参数类型，默认  
 			//可以在web.xml中配置视图的模板类型，然后调用不同的视图
-			if(REQUEST_JSON.equalsIgnoreCase(r)){
+			if(Lite.APPLICATION_JSON.equalsIgnoreCase(r)){
 				render.renderToJSON(request, response);
-			}else if(REQUEST_XML.equalsIgnoreCase(r)){
+			}else if(Lite.APPLICATION_XML.equalsIgnoreCase(r)){
 				render.renderToXML(request, response);
 			}else{
 				
-				
-				
 				render.render(request, response);
+				
+				/*
+				if(Lite.getViewType()==ViewType.FREE_MARKER){
+					render.ren
+				}else if(Lite.getViewType()==ViewType.VELOCITY){
+					
+				}else if(Lite.getViewType()==ViewType.JSP){
+					
+				}else{
+					//默认采用html的形式
+					render.render(request, response);	
+				}*/
+				
 			}
 			return;
 		}
 		// 如果方法返回的是string，则直接打印String的内容
 		if (result instanceof String) {
-			
-			/*
 			String string = (String) result;
+			ActionResult render = new ActionResult();
+			render.renderString(request, response, string);
+			/*
+			
 			if (string.startsWith("redirect:")) {
 				response.sendRedirect(string.substring("redirect:".length()));
 				return;

@@ -1,4 +1,4 @@
-package com.itwarcraft.lite.plugin.c3p0;
+package com.itwarcraft.lite.plugin.impl;
 
 import java.sql.Connection;
 
