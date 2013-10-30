@@ -1,5 +1,5 @@
 package com.itwarcraft.lite.base;
 
-public class ModelTest extends Model {
+public class ModelTest extends BaseModel {
 
 }

@@ -1,7 +1,5 @@
 package com.itwarcraft.lite.mvc.render;
 
-import java.io.PrintWriter;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 

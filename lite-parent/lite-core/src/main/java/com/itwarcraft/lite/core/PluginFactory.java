@@ -24,6 +24,10 @@ public final class PluginFactory {
 		IPlugin freemarker = new FreemarkerPlugin();
 		freemarker.init();freemarker.start();
 		plugins.put("freemarker", freemarker);
+		
+		//默认的template是freemarker
+		plugins.put("template", freemarker);
+		
 	}
 	
 	
@@ -54,7 +58,13 @@ public final class PluginFactory {
 		value.init();value.start();
 		plugins.put(name, value);
 	}
-	 
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	static void addPlugin(String name,String className) throws ClassNotFoundException, InstantiationException, IllegalAccessException{
+		Class clasz = Class.forName(className);
+		addPlugin(name,clasz);
+	}
+	
 	 @SuppressWarnings("unchecked")
 	public static <T> T getPlugin(String name,Class<T> clasz)throws Exception{
 		 IPlugin target = plugins.get(name);
@@ -64,7 +74,7 @@ public final class PluginFactory {
 			return value;
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new LiteException("获取插件错误！请检查要导出的插件类型！");
+			throw new LiteException("获取插件错误！请检查要导出的插件类型！",e.getCause());
 		}
 	 }
 	

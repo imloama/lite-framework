@@ -40,6 +40,10 @@ public final class ActionContext {
 		return LOCAL_ACTIONCONTEXT.get().request.getAttribute(name);
 	}
 	
+	public static Object getAttrFromSession(String name){
+		return getHttpSession().getAttribute(name);
+	}
+	
 	public static String[] getParameterValues(String name) {
 		String[] values = LOCAL_ACTIONCONTEXT.get().request.getParameterValues(name);
 		if(values==null)

@@ -1,14 +1,22 @@
 package com.itwarcraft.lite.mvc;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.itwarcraft.lite.core.Lite;
 import com.itwarcraft.lite.core.PluginFactory;
+import com.itwarcraft.lite.mvc.render.FreemarkerRender;
+import com.itwarcraft.lite.mvc.render.JsonRender;
+import com.itwarcraft.lite.mvc.render.JspRender;
+import com.itwarcraft.lite.mvc.render.Render;
+import com.itwarcraft.lite.mvc.render.TemplateRender;
+import com.itwarcraft.lite.mvc.render.TextRender;
+import com.itwarcraft.lite.mvc.render.VelocityRender;
+import com.itwarcraft.lite.mvc.render.XmlRender;
+import com.itwarcraft.lite.plugin.XmlPlugin;
 
 /**
  * Action处理结果封装类,根据要求不同，提供不同的视图
@@ -76,76 +84,69 @@ public class ActionResult {
 		return this;
 	}
 	
+	public ActionResult addModel(Map<String,Object> model){
+		for(String key : model.keySet()){
+			this.addModel(key, model.get(key));
+		}
+		return this;
+	}
+	
 	public int getMessageCode() {
 		return messageCode;
 	}
+	public ActionResult setPath(String path){
+		this.path = path;
+		return this;
+	}
+	
+	public ActionResult setViewType(ViewType type){
+		this.type = type;
+		return this;
+	}
+	
 	
 	public Map<String, Object> getData() {
 		return data;
 	}
 
 	//默认的方式，返回的是jsp
-	public void render(HttpServletRequest request, HttpServletResponse response) {
-		if(type!=null){
-			if(this.type==ViewType.FREE_MARKER){
-				
-			}else if(this.type==ViewType.VELOCITY){
-				
-			}else if(this.type==ViewType.JSP){
-				
-			}else{
-				
-			}
-		}else{
-			//默认采用Lite.ViewType的设定
+	public void render(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		this.addModel("success", this.success);
+		this.addModel("messageCode", this.messageCode);
+		String r = request.getContentType();
+		if(Lite.APPLICATION_JSON.equalsIgnoreCase(r)){
+			this.type = ViewType.JSON;
+		}else if(Lite.APPLICATION_XML.equalsIgnoreCase(r)){
+			this.type = ViewType.XML;
 		}
-	}
-
-	/**
-	 * 返回JSON格式的视图
-	 * @param request
-	 * @param response
-	 * @throws Exception 
-	 */
-	public void renderToJSON(HttpServletRequest request,
-			HttpServletResponse response) throws Exception {
 		
-		response.setContentType("application/json;charset=UTF-8");
-		PrintWriter out = response.getWriter();
-		this.success = 1;
-		String result = PluginFactory.getJSONPlugin().toJSONString(this);
-		out.print(result);
-		out.flush();
-		out.close();
-	}
-
-	public void renderToXML(HttpServletRequest request,
-			HttpServletResponse response) {
-
-	}
-
-	public void renderString(HttpServletRequest request,
-			HttpServletResponse response,String text) throws IOException {
-		response.setContentType("text/html;charset=UTF-8");
-		PrintWriter out = response.getWriter();
-		this.success = 1;
-		out.print(text);
-		out.flush();
-		out.close();
-	}
-
-	public void renderToHtml(HttpServletRequest request,
-			HttpServletResponse response) {
-
-	}
-	
-	
-	public static ActionResult getJsonInstance(){
+		Render render = null;
+		//默认采用Lite.ViewType的设定
+		if(type==null){
+			this.type = Lite.getViewType();
+		}
 		
-		return null;
+		if(this.type==ViewType.FREE_MARKER){
+			render = new FreemarkerRender(this.path,this.data);
+		}else if(this.type==ViewType.VELOCITY){
+			render = new VelocityRender(this.path,this.data);
+		}else if(this.type==ViewType.JSP){
+			render = new JspRender(this.path,this.data);
+		}else if(this.type==ViewType.JSON){
+			render = new JsonRender(PluginFactory.getJSONPlugin().toJSONString(this));
+		}else if(this.type==ViewType.XML){
+			render = new XmlRender(PluginFactory.getPlugin("xml", XmlPlugin.class).toXml(this));
+		}else if(this.type == ViewType.TEXT){
+			render = new TextRender((String)this.data.get("lite_view_text"));
+			
+		}else{
+			render = new TemplateRender();
+		}
+		
+		render.render(request, response);
 	}
 
-
+	
 	
 	public ViewType getViewType() {
 		return type;

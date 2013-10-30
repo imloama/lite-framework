@@ -54,14 +54,14 @@ public class ClassUtil {
     
     // 扫描class目录下的所有类
     public static List<Class<?>> getClassListByAnnotation(Class<? extends Annotation> annotationClass) {
-    	return getClassListByAnnotation(".",annotationClass);
+    	return getClassListByAnnotation("",annotationClass);
     }
 
     // 获取指定包名下指定注解的所有类
     public static List<Class<?>> getClassListByAnnotation(String packageName, Class<? extends Annotation> annotationClass) {
         List<Class<?>> classList = new ArrayList<Class<?>>();
         String path = packageName.replace(".", "/");
-        System.out.println("xxxxxxxxxx--"+path);
+       logger.info("scan path:"+path);
         try {
             Enumeration<URL> urls = Thread.currentThread().getContextClassLoader().getResources(path);
             logger.info("......");

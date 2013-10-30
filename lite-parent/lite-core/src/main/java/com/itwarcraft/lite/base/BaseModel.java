@@ -11,12 +11,21 @@ import java.util.Map;
  * @author itwarcraft@gmail.com
  *
  */
-public class Model {
+public class BaseModel {
 
 	//1 所有的属性，采用map
 	
 	private Map<String,Object> attrs = new HashMap<String,Object>();
 	
 	//2 哪些属性被更新过  更新的值是多少？map
+	
+	
+	public Map<String, Object> getAttrs() {
+		return attrs;
+	}
+	
+	public void setAttrs(Map<String, Object> attrs) {
+		this.attrs = attrs;
+	}
 	
 }

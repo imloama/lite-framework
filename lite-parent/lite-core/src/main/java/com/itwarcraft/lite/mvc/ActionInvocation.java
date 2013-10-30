@@ -59,7 +59,7 @@ public class ActionInvocation {
 					throw new RuntimeException(e);
 				}
 
-				// 调用Action中目的方法
+				//调用Action中目的方法
 				try {
 					result = action.method.invoke(object, this.args);
 				} catch (Exception e) {

@@ -54,23 +54,35 @@ public class LiteFilter implements Filter {
 	public void init(FilterConfig filterConfig) throws ServletException {
 		logger.info("初始化容器");
 		boolean dev = false;
-		ViewType type = ViewType.HTML;
+		ViewType type = ViewType.JSP;
 		String devMode = filterConfig.getInitParameter("devMode");
 		String template = filterConfig.getInitParameter("template");
-		if (devMode != null && ("true".equalsIgnoreCase(devMode) || "false".equalsIgnoreCase(devMode))) {
-			
+		if (devMode != null && ("true".equalsIgnoreCase(devMode) )) {
+			dev = true;
 		}
+		logger.info("当前的系统运行模式为（true表示为开发模式，false表示为运行模式）："+dev);
 		//设定视图模板
 		if(template!=null){
 			if("freemarker".equalsIgnoreCase(template)){
 				type = ViewType.FREE_MARKER;
 			}else if("velocity".equalsIgnoreCase(template)){
 				type = ViewType.VELOCITY;
-			}else if("JSP".equalsIgnoreCase(template)){
+			}else if("jsp".equalsIgnoreCase(template)){
 				type = ViewType.JSP;
+			}else if("html".equalsIgnoreCase(template)){
+				type = ViewType.HTML;
+			}else{
+				//实现自定义视图，可以在web.xml中配置自定义视图的class名称
+				type = ViewType.CUSTOM.setTempate(template);
+				try {
+					PluginFactory.addPlugin("template", template);
+				} catch (Exception e) {
+					e.printStackTrace();
+					logger.error("加载自定义模板出错了！");
+				} 
 			}
 		}
-		
+		logger.info(type.toString());
 		Lite.init(dev, type);
 		
 		//1 扫描所有的注解action
@@ -113,23 +125,27 @@ public class LiteFilter implements Filter {
 						
 						//获取拦截器
 						Interceptors interceptors = m.getAnnotation(Interceptors.class);
-						Class<? extends Intercepter>[] inters = interceptors.value();
-						//拦截器数组
-						Intercepter[] ins = new Intercepter[inters.length];
-						int i=0;
-						for(Class<? extends Intercepter> intercs : inters)
-						{
-							try {
-								ins[i]=intercs.newInstance();
-							} catch (InstantiationException e) {
-								logger.error("初始化拦截器错误！");
-								e.printStackTrace();
-							} catch (IllegalAccessException e) {
-								logger.error("初始化拦截器错误！");
-								e.printStackTrace();
-							}
-							i++;
-						}//interceptors 循环结束 
+						Intercepter[] ins = null;
+						if(interceptors!=null){
+							Class<? extends Intercepter>[] inters = interceptors.value();
+							//拦截器数组
+							 ins = new Intercepter[inters.length];
+							int i=0;
+							for(Class<? extends Intercepter> intercs : inters)
+							{
+								try {
+									ins[i]=intercs.newInstance();
+								} catch (InstantiationException e) {
+									logger.error("初始化拦截器错误！");
+									e.printStackTrace();
+								} catch (IllegalAccessException e) {
+									logger.error("初始化拦截器错误！");
+									e.printStackTrace();
+								}
+								i++;
+							}//interceptors 循环结束 
+						}
+						
 						Action action = new Action(clasz,m,ins);
 						this.matcherActionMap.put(matcher, action);
 					}//
@@ -226,39 +242,20 @@ public class LiteFilter implements Filter {
 		}
 		if (result instanceof ActionResult) {
 			ActionResult render = (ActionResult) result;
-			String r = request.getContentType();
 			//如果是json请求
 			//如果是xml请求
 			//如果是普通请求  根据ActionResult中设定的参数类型，默认  
 			//可以在web.xml中配置视图的模板类型，然后调用不同的视图
-			if(Lite.APPLICATION_JSON.equalsIgnoreCase(r)){
-				render.renderToJSON(request, response);
-			}else if(Lite.APPLICATION_XML.equalsIgnoreCase(r)){
-				render.renderToXML(request, response);
-			}else{
-				
-				render.render(request, response);
-				
-				/*
-				if(Lite.getViewType()==ViewType.FREE_MARKER){
-					render.ren
-				}else if(Lite.getViewType()==ViewType.VELOCITY){
-					
-				}else if(Lite.getViewType()==ViewType.JSP){
-					
-				}else{
-					//默认采用html的形式
-					render.render(request, response);	
-				}*/
-				
-			}
+			render.render(request, response);
 			return;
 		}
 		// 如果方法返回的是string，则直接打印String的内容
 		if (result instanceof String) {
 			String string = (String) result;
-			ActionResult render = new ActionResult();
-			render.renderString(request, response, string);
+			ActionResult render = new ActionResult(ViewType.TEXT);
+			render.addModel("lite_view_text", string);
+			render.render(request, response);
+			//render.renderString(request, response, string);
 			/*
 			
 			if (string.startsWith("redirect:")) {

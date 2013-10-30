@@ -8,6 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 
 public class JspRender extends Render {
 
+	public JspRender(){
+		
+	}
 	
 	public JspRender(String path){
 		this.setPath( path);

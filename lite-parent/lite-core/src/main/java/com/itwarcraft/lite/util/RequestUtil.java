@@ -1,8 +1,11 @@
 package com.itwarcraft.lite.util;
 
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.Cookie;
@@ -12,6 +15,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+
+import com.itwarcraft.lite.base.BaseModel;
 
 /**
  * 用于处理HTTP请求的工具类
@@ -257,8 +262,14 @@ public class RequestUtil {
 	 * @param req
 	 * @param t
 	 * @return
+	 * @throws Exception 
 	 */
-	public static <T> T getObject(HttpServletRequest req, Class<T> model){
+	public static <T> T getObject(HttpServletRequest req, Class<T> model) throws Exception{
+		
+		if(!model.getSuperclass().equals(BaseModel.class)){
+			throw new Exception("对象必须为Model的子类！");
+		}
+		
 		String name = model.getSimpleName().toLowerCase();//类的名称
 		Map<String, String[]> data = req.getParameterMap();
 		Map<String,String> result = new HashMap<String,String>();
@@ -269,13 +280,72 @@ public class RequestUtil {
 		}
 		try {
 			T t = model.newInstance();
+			Method method = model.getMethod("setAttrs", Map.class);
+			method.invoke(t, result);
+			return t;
 		} catch (InstantiationException e) {
 			e.printStackTrace();
+			throw e;
 		} catch (IllegalAccessException e) {
 			e.printStackTrace();
+			throw e;
+		}
+	}
+	
+	/**
+	 * 从request中获取多组数据，生成对象
+	 * @param req
+	 * @param model
+	 * @return
+	 * @throws Exception
+	 */
+	public static <T> List<T> getListModel(HttpServletRequest req, Class<T> model) throws Exception{
+		List<T> result = new ArrayList<T>();
+		String name = model.getSimpleName().toLowerCase();//类的名称
+		Map<String, String[]> data = req.getParameterMap();
+		Map<String,String[]> target = new HashMap<String,String[]>();
+		int max = 0;
+		for(String key:data.keySet()){
+			if(key.startsWith(name)){
+				String[] temp = data.get(key);
+				target.put(key, temp);
+				if(max>temp.length)
+					max=temp.length;
+			}
 		}
 		
-		return null;
+		//把纵向内容转成横向的内容
+		List<Map<String,String>> list = new ArrayList<Map<String,String>>();
+		for(int i=0;i<max;i++){
+			Map<String,String> tmap = new HashMap<String,String>();
+			for(String key : target.keySet()){
+				String v[] = target.get(key);
+				if(v.length>=max){
+					tmap.put(key, v[i]);
+				}else{
+					tmap.put(key, "");
+				}
+			}
+		}
+		
+		try {
+			
+			for(Map<String,String> val : list){
+				T t = model.newInstance();
+				Method method = model.getMethod("setAttrs", Map.class);
+				method.invoke(t, val);
+				result.add(t);
+			}
+			return result;
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			throw e;
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+			throw e;
+		}
+		
 	}
+	
 
 }
