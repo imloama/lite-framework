@@ -1,7 +1,7 @@
 package com.itwarcraft.lite.demo;
 
-import com.itwarcraft.lite.base.Model;
+import com.itwarcraft.lite.base.BaseModel;
 
-public class User extends Model {
+public class User extends BaseModel {
 
 }
