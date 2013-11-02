@@ -1,8 +1,12 @@
 package com.itwarcraft.lite.base;
 
+import java.text.ParseException;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.time.DateUtils;
 
 import com.itwarcraft.lite.mvc.ActionContext;
 import com.itwarcraft.lite.mvc.ActionResult;
@@ -83,6 +87,12 @@ public abstract class BaseAction<A extends BaseAction> {
 		return Double.parseDouble(this.getParameter(name));
 	}
 	
+	public Date getDateParam(String name) throws ParseException{
+		return DateUtils.parseDate(this.getParameter(name), new String[]{"yyyy-MM-dd HH:mm:ss"});
+	}
+	
+	
+	
 	/**
 	 * 先从request中获取，再从session中获取
 	 * @return
@@ -141,6 +151,10 @@ public abstract class BaseAction<A extends BaseAction> {
 	public void renderText(String text) throws Exception{
 		this.result.setViewType(ViewType.TEXT).addModel("lite_view_text",text);
 		this.render();
+	}
+	
+	public void OK()throws Exception{
+		this.renderText("success!");
 	}
 	
 }
