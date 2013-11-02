@@ -22,7 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 import com.itwarcraft.lite.annotation.Act;
-import com.itwarcraft.lite.annotation.Interceptors;
+import com.itwarcraft.lite.annotation.Interceptor;
 import com.itwarcraft.lite.annotation.Path;
 import com.itwarcraft.lite.base.Intercepter;
 import com.itwarcraft.lite.converter.ConverterFactory;
@@ -124,7 +124,7 @@ public class LiteFilter implements Filter {
 						}
 						
 						//获取拦截器
-						Interceptors interceptors = m.getAnnotation(Interceptors.class);
+						Interceptor interceptors = m.getAnnotation(Interceptor.class);
 						Intercepter[] ins = null;
 						if(interceptors!=null){
 							Class<? extends Intercepter>[] inters = interceptors.value();

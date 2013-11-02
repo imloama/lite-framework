@@ -28,8 +28,10 @@ public abstract class BaseModel<M extends BaseModel> {
 		return attrs;
 	}
 	
-	public void setAttrs(Map<String, Object> attrs) {
+	@SuppressWarnings({ "unchecked", "hiding" })
+	public <M> M setAttrs(Map<String, Object> attrs) {
 		this.attrs = attrs;
+		return (M)this;
 	}
 	
 	@SuppressWarnings({ "unchecked", "hiding" })
