@@ -11,7 +11,6 @@ public class Action {
 		this.method = method;
 		this.parameterTypes = method.getParameterTypes();
 		this.intercepters = intercepters;
-
 	}
 
 	public final Class<?> clasz;

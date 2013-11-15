@@ -13,7 +13,7 @@ public class ActionInvocation {
 	
 	public ActionInvocation(Action action, Object... args) {
 		this.action = action;
-		this.interceptors = action.intercepters;
+		this.intercepters = action.intercepters;
 		if (action.intercepters != null && action.intercepters.length != 0) {
 			this.length = action.intercepters.length;
 		}
@@ -24,10 +24,10 @@ public class ActionInvocation {
 	}
 
 	private Action action;
-	private Intercepter[] interceptors;
+	private Intercepter[] intercepters;
 	private int index = 0;
 	private int length = 0;
-
+	
 	private Object[] args;
 
 	// 调用方法返回值
@@ -49,7 +49,7 @@ public class ActionInvocation {
 			}
 		} else {
 			if (index <= length - 1) {
-				interceptors[index++].doIntercept(this);
+				this.intercepters[index++].doIntercept(this);
 			} else {
 
 				Object object = null;
@@ -65,7 +65,7 @@ public class ActionInvocation {
 				} catch (Exception e) {
 					throw new RuntimeException(e);
 				}
-
+				
 			}
 
 		}

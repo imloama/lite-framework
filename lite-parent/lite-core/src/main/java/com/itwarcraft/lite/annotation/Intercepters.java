@@ -9,13 +9,13 @@ import com.itwarcraft.lite.base.Intercepter;
 
 
 /**
- * 支持类和方法注解，表示在类/方法执行后  执行该拦截器
+ * 支持类和方法注解，表示在类/方法执行前  执行该拦截器
  * @author itwarcraft@gmail.com
  *
  */
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
-public @interface After {
+public @interface Intercepters {
 	Class<? extends Intercepter>[] value();
 }

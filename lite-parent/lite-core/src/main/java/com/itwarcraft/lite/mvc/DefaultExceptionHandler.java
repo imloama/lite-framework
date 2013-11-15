@@ -5,7 +5,9 @@ import java.io.PrintWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class ActionExceptionHandler {
+import com.itwarcraft.lite.core.ExceptionHandler;
+
+public class DefaultExceptionHandler implements ExceptionHandler{
 
 	/**
 	 * Handle exception that print stack trace on HTML page.

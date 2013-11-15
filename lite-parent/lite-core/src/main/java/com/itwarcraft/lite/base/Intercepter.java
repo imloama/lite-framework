@@ -2,7 +2,13 @@ package com.itwarcraft.lite.base;
 
 import com.itwarcraft.lite.mvc.ActionInvocation;
 
-
+/**
+ * 拦截器接口，所有的拦截器功能都必须继承该接口
+ * 只是针对拦截器实现上，根据作用域的不同，使用不同的注解
+ * @author itwarcraft@gmail.com
+ * @time 2013-11-13 18:12
+ *
+ */
 public interface Intercepter {
 
 	public void doIntercept(ActionInvocation invocation);

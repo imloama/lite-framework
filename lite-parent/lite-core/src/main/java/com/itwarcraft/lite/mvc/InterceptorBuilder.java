@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-import com.itwarcraft.lite.annotation.Interceptor;
+import com.itwarcraft.lite.annotation.Intercept;
 import com.itwarcraft.lite.base.Intercepter;
 
 /**
@@ -73,7 +73,7 @@ public class InterceptorBuilder {
 	 * 构建控制器上面的拦截器
 	 */
 	public Intercepter[] buildControllerInterceptors(Class<?> controllerClass) {
-		Interceptor intercepters = controllerClass.getAnnotation(Interceptor.class);
+		Intercept intercepters = controllerClass.getAnnotation(Intercept.class);
 		return intercepters != null ? createInterceptors(intercepters) : Null;
 	}
 
@@ -81,7 +81,7 @@ public class InterceptorBuilder {
 	 * 构建方法上面的拦截器
 	 */
 	public Intercepter[] buildMethodInterceptors(Method method) {
-		Interceptor intercepters = method.getAnnotation(Interceptor.class);
+		Intercept intercepters = method.getAnnotation(Intercept.class);
 		return intercepters != null ? createInterceptors(intercepters) : Null;
 	}
 
@@ -89,7 +89,8 @@ public class InterceptorBuilder {
 	 * 创建拦截器:每个拦截器只实例化一次
 	 */
 	// 该类实现的模式是数据库存储模式,即有一个返回值和一个或者多个引用传值:interceptorMap是引用传值,interceptors是返回值
-	private Intercepter[] createInterceptors(Interceptor before) {
+	private Intercepter[] createInterceptors(Intercept before) {
+		/*
 		Intercepter[] interceptors = null;
 		@SuppressWarnings("unchecked")
 		// :Before(values={xx.class,yy.class})
@@ -112,7 +113,8 @@ public class InterceptorBuilder {
 				}
 			}
 		}
-		return interceptors;
+		return interceptors;*/
+		return null;
 	}
 
 	/**

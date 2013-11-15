@@ -2,6 +2,7 @@ package com.itwarcraft.lite.core;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -22,13 +23,14 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 
 import com.itwarcraft.lite.annotation.Act;
-import com.itwarcraft.lite.annotation.Interceptor;
+import com.itwarcraft.lite.annotation.Intercept;
+import com.itwarcraft.lite.annotation.Intercepters;
 import com.itwarcraft.lite.annotation.Path;
 import com.itwarcraft.lite.base.Intercepter;
 import com.itwarcraft.lite.converter.ConverterFactory;
 import com.itwarcraft.lite.mvc.Action;
 import com.itwarcraft.lite.mvc.ActionContext;
-import com.itwarcraft.lite.mvc.ActionExceptionHandler;
+import com.itwarcraft.lite.mvc.DefaultExceptionHandler;
 import com.itwarcraft.lite.mvc.ActionInvocation;
 import com.itwarcraft.lite.mvc.ActionResult;
 import com.itwarcraft.lite.mvc.URLMatcher;
@@ -46,6 +48,16 @@ public class LiteFilter implements Filter {
 	
 	private URLMatcher[] matchers = null;
 	private Map<URLMatcher, Action> matcherActionMap = new HashMap<URLMatcher, Action>();
+	
+	/**
+	 * 全局Interceptor列表，表示在Action前执行
+	 */
+	private final List<Intercepter> interceptersBefore = new ArrayList<Intercepter>();
+	/**
+	 * 全局Interceptor列表，表示在Action后执行
+	 */
+	private final List<Intercepter> interceptersAfter = new ArrayList<Intercepter>();
+	
 	private ConverterFactory converterFactory = new ConverterFactory();
 	
 	/**
@@ -85,75 +97,20 @@ public class LiteFilter implements Filter {
 		logger.info(type.toString());
 		Lite.init(dev, type);
 		
-		//1 扫描所有的注解action
-		List<Class<?>> list = ClassUtil.getClassListByAnnotation(Act.class);
-		Set<String> publicMethodNameSetInObjectClass = findPublicMethodNamesInObjectClass();
-		
-		for(Class<?> clasz : list){
-			try {
-				Class.forName(clasz.getName());
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-				throw new RuntimeException(e.getCause());
-			}
-			
-			String urlo = clasz.getAnnotation(Act.class).value();
-			
-			Method[] methods = clasz.getMethods();
-			if(methods!=null&&methods.length>0){
-				for (Method m : methods) {
-					//判断方法是否有url地址的注解
-					if(!publicMethodNameSetInObjectClass.contains(m)
-							&&m.isAnnotationPresent(Path.class)){
-						Path path = m.getAnnotation(Path.class);
-						String url = path.value();
-						int index = url.indexOf(":");
-						
-						URLMatcher matcher = null;
-						if(index>0){
-							String[] ut = url.split(":");
-							matcher = new URLMatcher(ut[0],urlo+ut[1]);
-						}else{
-							matcher = new URLMatcher(url);
-						}
-						
-						//url地址中包括的参数个数必须与方法的参数相同
-						if(matcher.getArgumentCount()!=m.getParameterTypes().length){
-							logger.error("url地址中的参数与方法参数的数据不相同...");
-							continue;
-						}
-						
-						//获取拦截器
-						Interceptor interceptors = m.getAnnotation(Interceptor.class);
-						Intercepter[] ins = null;
-						if(interceptors!=null){
-							Class<? extends Intercepter>[] inters = interceptors.value();
-							//拦截器数组
-							 ins = new Intercepter[inters.length];
-							int i=0;
-							for(Class<? extends Intercepter> intercs : inters)
-							{
-								try {
-									ins[i]=intercs.newInstance();
-								} catch (InstantiationException e) {
-									logger.error("初始化拦截器错误！");
-									e.printStackTrace();
-								} catch (IllegalAccessException e) {
-									logger.error("初始化拦截器错误！");
-									e.printStackTrace();
-								}
-								i++;
-							}//interceptors 循环结束 
-						}
-						
-						Action action = new Action(clasz,m,ins);
-						this.matcherActionMap.put(matcher, action);
-					}//
-				}//循环method结束
-			}
-			
-			
-		}//class循环结束
+		//初始化Action
+		//初始化拦截器
+		AnnotationBuilder builder = new AnnotationBuilder();
+		try {
+			builder.buildIntercepters();
+			builder.buildActions();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+			logger.error("初始化拦截器或ACTION失败 !");
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+			logger.error("初始化拦截器或ACTION失败 !");
+		}
+
 		
 		if(this.matcherActionMap.size()==0){
 			throw new RuntimeException("the size of urlMatcherActionMap is 0");
@@ -161,6 +118,10 @@ public class LiteFilter implements Filter {
 		this.matchers = this.matcherActionMap.keySet().toArray(new URLMatcher[this.matcherActionMap.size()]);
 		//url地址排序
 		Arrays.sort(this.matchers,new Sort());//排序结束
+		
+		//扫描所有的interceptor，创建全局的拦截器    添加1个用户登陆限制的拦截器，mycandy中的
+		
+		
 	}
 	
 	
@@ -217,7 +178,7 @@ public class LiteFilter implements Filter {
 
 				} catch (Exception e) {
 					isHandled = false;
-					ActionExceptionHandler exceptionHandler = new ActionExceptionHandler();
+					DefaultExceptionHandler exceptionHandler = new DefaultExceptionHandler();
 					exceptionHandler.handle(request, response, e);
 
 				} finally {
@@ -342,6 +303,143 @@ public class LiteFilter implements Filter {
 				throw new RuntimeException("Cannot mapping one url '" + u1 + "' to more than one action method.");
 			}else{
 				return 0;	
+			}
+		}
+		
+	}
+	
+	/**
+	 * Initionalize Annotation 初始化类
+         * ，由于注解的拦截器需要有一定的顺序，在注解上提供order字段，按从小到大的顺序排列。
+	 * @author itwarcaft@gmail.com
+	 * @time 2011-11-11 18:15
+	 *
+	 */
+	public final class AnnotationBuilder{
+		
+		/**
+		 * 找到所有的全局拦截器，保存到DispatcherFilter.java类的变量中
+		 * @throws IllegalAccessException 
+		 * @throws InstantiationException 
+		 */
+		public void  buildIntercepters() throws InstantiationException, IllegalAccessException{
+			
+			List<Class<?>> interceptors = ClassUtil.getClassListByAnnotation(Intercept.class);
+			for(Class<?> clasz : interceptors){
+				Intercepter inter = (Intercepter)clasz.newInstance();
+				Intercept intercep = (Intercept) clasz.getAnnotation(Intercept.class); 
+				String value = intercep.value();
+				if("before".equals(value)){
+					interceptersBefore.add(inter);
+				}else{
+					interceptersAfter.add(inter);
+				}
+			}
+		}
+		
+		/**
+		 * 通过注解，找到所有的Action,和注解的拦截器，由于注解的拦截器需要有一定的顺序，在注解上提供order字段，按从小到大的顺序排列。
+		 * @throws IllegalAccessException 
+		 * @throws InstantiationException 
+		 */
+		public void buildActions() throws InstantiationException, IllegalAccessException{
+			//1 扫描所有的注解action
+			List<Class<?>> list = ClassUtil.getClassListByAnnotation(Act.class);
+			Set<String> publicMethodNameSetInObjectClass = findPublicMethodNamesInObjectClass();
+			
+			for(Class<?> clasz : list){
+				try {
+					Class.forName(clasz.getName());
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+					throw new RuntimeException(e.getCause());
+				}
+				
+				String urlo = clasz.getAnnotation(Act.class).value();
+				
+				Intercepter[] interBefore = null;
+				Intercepters before = clasz.getAnnotation(Intercepters.class);
+				if(before!=null){
+					Class<? extends Intercepter>[] a1 = before.value();
+					interBefore = new Intercepter[a1.length];
+					int i = 0;
+					for(Class<? extends Intercepter> cls : a1){
+						interBefore[i] = cls.newInstance();
+						i++;
+					}
+				}
+				
+			
+				Method[] methods = clasz.getMethods();
+				if(methods!=null&&methods.length>0){
+					for (Method m : methods) {
+						//判断方法是否有url地址的注解
+						if(!publicMethodNameSetInObjectClass.contains(m)
+								&&m.isAnnotationPresent(Path.class)){
+							Path path = m.getAnnotation(Path.class);
+							String url = path.value();
+							int index = url.indexOf(":");
+							
+							URLMatcher matcher = null;
+							if(index>0){
+								String[] ut = url.split(":");
+								matcher = new URLMatcher(ut[0],urlo+ut[1]);
+							}else{
+								matcher = new URLMatcher(url);
+							}
+							
+							//url地址中包括的参数个数必须与方法的参数相同
+							if(matcher.getArgumentCount()!=m.getParameterTypes().length){
+								logger.error("url地址中的参数与方法参数的数据不相同...");
+								continue;
+							}
+							
+							
+							//获取拦截器
+							Intercepters interceptors = m.getAnnotation(Intercepters.class);
+							Intercepter[] insBefore = null;
+							if(interceptors!=null){
+								Class<? extends Intercepter>[] inters = interceptors.value();
+								//拦截器数组
+								insBefore = new Intercepter[inters.length+(interBefore==null?0:interBefore.length)];
+								int i=0;
+								for(Intercepter ints : interBefore){
+									insBefore[i] = ints;
+									i++;
+								}
+								
+								for(Class<? extends Intercepter> intercs : inters)
+								{
+									try {
+										insBefore[i]=intercs.newInstance();
+									} catch (InstantiationException e) {
+										logger.error("初始化拦截器错误！");
+										e.printStackTrace();
+									} catch (IllegalAccessException e) {
+										logger.error("初始化拦截器错误！");
+										e.printStackTrace();
+									}
+									i++;
+								}//interceptors 循环结束 
+							}
+							
+							
+							Action action = new Action(clasz,m,insBefore);
+							matcherActionMap.put(matcher, action);
+						}//
+					}//循环method结束
+				}
+				
+				
+			}//class循环结束
+			
+			
+			
+			List<Class<?>> actions = ClassUtil.getClassListByAnnotation(Act.class);
+			for(Class<?> clasz : actions){
+				Object target = clasz.newInstance();
+				
+				
 			}
 		}
 		
