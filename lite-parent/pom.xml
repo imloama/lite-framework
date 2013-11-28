@@ -138,5 +138,6 @@
 	<modules>
 		<module>lite-core</module>
 		<module>lite-demo</module>
+		<module>lite-template</module>
 	</modules>
 </project>
