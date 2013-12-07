@@ -18,6 +18,5 @@ import com.itwarcraft.lite.base.Intercepter;
 @Retention(RetentionPolicy.RUNTIME)
 @Target( { ElementType.TYPE, ElementType.METHOD })
 public @interface Intercept {
-	String value() default "before";
 	int order() default 100;
 }

@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +35,7 @@ import com.itwarcraft.lite.mvc.ActionContext;
 import com.itwarcraft.lite.mvc.DefaultExceptionHandler;
 import com.itwarcraft.lite.mvc.ActionInvocation;
 import com.itwarcraft.lite.mvc.ActionResult;
+import com.itwarcraft.lite.mvc.IntercepterInvocation;
 import com.itwarcraft.lite.mvc.URLMatcher;
 import com.itwarcraft.lite.mvc.ViewType;
 import com.itwarcraft.lite.util.ClassUtil;
@@ -50,13 +53,10 @@ public class LiteFilter implements Filter {
 	private Map<URLMatcher, Action> matcherActionMap = new HashMap<URLMatcher, Action>();
 	
 	/**
-	 * 全局Interceptor列表，表示在Action前执行
+	 * 全局Intercepter
 	 */
-	private final List<Intercepter> interceptersBefore = new ArrayList<Intercepter>();
-	/**
-	 * 全局Interceptor列表，表示在Action后执行
-	 */
-	private final List<Intercepter> interceptersAfter = new ArrayList<Intercepter>();
+	private static final List<IntercepterWrapper> intercepters = new ArrayList<IntercepterWrapper>();
+
 	
 	private ConverterFactory converterFactory = new ConverterFactory();
 	
@@ -124,8 +124,6 @@ public class LiteFilter implements Filter {
 		
 	}
 	
-	
-
 
 	public void doFilter(ServletRequest req, ServletResponse rep,
 			FilterChain filterChain) throws IOException, ServletException {
@@ -241,7 +239,6 @@ public class LiteFilter implements Filter {
 			relativeUrlForWebRoot = new String(relativeUrlForWebRoot.getBytes("iso-8859-1"), "utf-8");
 		}
 		// 对非文件上传的字符编码处理
-		
 		for(URLMatcher matcher:this.matcherActionMap.keySet()){
 			//保证是否为get post等方法
 			if(!matcher.requestMethod.equalsIgnoreCase(request.getMethod())){
@@ -265,7 +262,14 @@ public class LiteFilter implements Filter {
 						}
 					}
 				}
-				return new ActionInvocation(action,arguments).invoke();
+				//return new ActionInvocation(action,arguments).invoke();
+				List<Intercepter> all = new ArrayList<Intercepter>();
+				for(IntercepterWrapper iw : intercepters){
+					all.add(iw.intercepter);
+				}
+				ActionInvocation invocation = new ActionInvocation(action,arguments);
+				new IntercepterInvocation(all, invocation).invoke();
+				return invocation.invoke();
 			}
 		}
 		
@@ -288,25 +292,7 @@ public class LiteFilter implements Filter {
 
 	}
 	
-	/**
-	 * URLMatcher排序类
-	 * @author itwarcraft@gmail.com
-	 *
-	 */
-	public final class Sort implements Comparator<URLMatcher>{
-
-		public int compare(URLMatcher m1, URLMatcher m2) {
-			String u1 = m1.urlMapping;
-			String u2 = m2.urlMapping;
-			int c = u1.compareTo(u2);
-			if(c==0){
-				throw new RuntimeException("Cannot mapping one url '" + u1 + "' to more than one action method.");
-			}else{
-				return 0;	
-			}
-		}
-		
-	}
+	
 	
 	/**
 	 * Initionalize Annotation 初始化类
@@ -327,14 +313,14 @@ public class LiteFilter implements Filter {
 			List<Class<?>> interceptors = ClassUtil.getClassListByAnnotation(Intercept.class);
 			for(Class<?> clasz : interceptors){
 				Intercepter inter = (Intercepter)clasz.newInstance();
-				Intercept intercep = (Intercept) clasz.getAnnotation(Intercept.class); 
-				String value = intercep.value();
-				if("before".equals(value)){
-					interceptersBefore.add(inter);
-				}else{
-					interceptersAfter.add(inter);
-				}
+				IntercepterWrapper iw = new IntercepterWrapper();
+				iw.intercepter = inter;
+				Intercept cept = clasz.getAnnotation(Intercept.class);
+				iw.order = cept.order();
+				intercepters.add(iw);
 			}
+			//对结果进行排序
+			Collections.sort(intercepters, new IntercepterWrapperSort());
 		}
 		
 		/**
@@ -357,18 +343,18 @@ public class LiteFilter implements Filter {
 				
 				String urlo = clasz.getAnnotation(Act.class).value();
 				
-				Intercepter[] interBefore = null;
-				Intercepters before = clasz.getAnnotation(Intercepters.class);
-				if(before!=null){
-					Class<? extends Intercepter>[] a1 = before.value();
-					interBefore = new Intercepter[a1.length];
+				//全局拦截器，注解在action上
+				Intercepter[] intercepterInAction = null;
+				Intercepters _intercepterInAction = clasz.getAnnotation(Intercepters.class);
+				if(_intercepterInAction!=null){
+					Class<? extends Intercepter>[] a1 = _intercepterInAction.value();
+					intercepterInAction = new Intercepter[a1.length];
 					int i = 0;
 					for(Class<? extends Intercepter> cls : a1){
-						interBefore[i] = cls.newInstance();
+						intercepterInAction[i] = cls.newInstance();
 						i++;
 					}
 				}
-				
 			
 				Method[] methods = clasz.getMethods();
 				if(methods!=null&&methods.length>0){
@@ -394,53 +380,82 @@ public class LiteFilter implements Filter {
 								continue;
 							}
 							
-							
 							//获取拦截器
+							//method 上定义的拦截器
 							Intercepters interceptors = m.getAnnotation(Intercepters.class);
-							Intercepter[] insBefore = null;
+							Intercepter[] _intercepters = null;
 							if(interceptors!=null){
 								Class<? extends Intercepter>[] inters = interceptors.value();
 								//拦截器数组
-								insBefore = new Intercepter[inters.length+(interBefore==null?0:interBefore.length)];
+								_intercepters = new Intercepter[inters.length+(intercepterInAction==null?0:intercepterInAction.length)];
 								int i=0;
-								for(Intercepter ints : interBefore){
-									insBefore[i] = ints;
+								for(Intercepter ints : intercepterInAction){
+									_intercepters[i] = ints;
 									i++;
 								}
 								
 								for(Class<? extends Intercepter> intercs : inters)
 								{
 									try {
-										insBefore[i]=intercs.newInstance();
-									} catch (InstantiationException e) {
+										_intercepters[i]=intercs.newInstance();
+									} catch (Exception e) {
 										logger.error("初始化拦截器错误！");
 										e.printStackTrace();
-									} catch (IllegalAccessException e) {
-										logger.error("初始化拦截器错误！");
-										e.printStackTrace();
+										throw new LiteException("初始化方法的拦截器错误！", e.getCause());
 									}
 									i++;
 								}//interceptors 循环结束 
 							}
 							
 							
-							Action action = new Action(clasz,m,insBefore);
+							Action action = new Action(clasz,m,_intercepters);
 							matcherActionMap.put(matcher, action);
 						}//
 					}//循环method结束
 				}
-				
-				
 			}//class循环结束
 			
-			
-			
+			/*
 			List<Class<?>> actions = ClassUtil.getClassListByAnnotation(Act.class);
 			for(Class<?> clasz : actions){
 				Object target = clasz.newInstance();
 				
-				
+			}*/
+		}
+		
+	}
+	/**
+	 * URLMatcher排序类
+	 * @author itwarcraft@gmail.com
+	 *
+	 */
+	private final class Sort implements Comparator<URLMatcher>{
+
+		public int compare(URLMatcher m1, URLMatcher m2) {
+			String u1 = m1.urlMapping;
+			String u2 = m2.urlMapping;
+			int c = u1.compareTo(u2);
+			if(c==0){
+				throw new RuntimeException("Cannot mapping one url '" + u1 + "' to more than one action method.");
+			}else{
+				return 0;	
 			}
+		}
+	}
+	//拦截器的包装方法
+	private class IntercepterWrapper{
+		Intercepter intercepter;
+		int order;
+	}
+	/**
+	 * 内部类，拦截器的排序方法
+	 * @author itwarcraft@gmail.com
+	 * @time 2013-12-04
+	 */
+	private final class IntercepterWrapperSort implements Comparator<IntercepterWrapper>{
+
+		public int compare(IntercepterWrapper i1, IntercepterWrapper i2) {
+			return i1.order - i2.order;
 		}
 		
 	}
